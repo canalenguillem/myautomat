@@ -1,0 +1,86 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Carpetas de entorno virtual
+venv/
+env/
+.venv/
+.pipenv/
+# Si usas poetry
+.poetry/
+
+# Archivos de configuración de entorno
+.env
+.env.*
+
+# Configuración de IDEs y editores
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Archivos de salida o temporales
+*.log
+*.csv
+*.dat
+*.sqlite3
+*.db
+
+# Archivos de imágenes, videos y audios generados
+images/
+videos/
+audios/
+temp/
+*.mp4
+*.mp3
+*.wav
+*.srt
+*.jpg
+*.jpeg
+*.png
+*.gif
+
+# Archivos de salida generados
+output/
+.mp/
+temp/
+
+# Archivos de caché
+*.egg-info/
+.eggs/
+*.egg
+.Python
+*.pyo
+*.pyd
+*.whl
+*.manifest
+*.spec
+
+# Archivos de configuración de sistemas operativos
+.DS_Store
+Thumbs.db
+
+# Archivos de configuración de herramientas de despliegue
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pid
+
+# Ignorar claves y credenciales
+config.json
+
+# Archivos temporales
+*.temp
+*.tmp
+*.bak
+
+# Otros archivos o carpetas específicas de tu proyecto
+images/             # Carpeta de imágenes generadas
+subtitles/          # Carpeta de subtítulos generados
+output/             # Carpeta de
+
+registro_videos.json
+
+data

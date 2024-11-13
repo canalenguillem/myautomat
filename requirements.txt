@@ -1,0 +1,5 @@
+openai
+yt_dlp
+pydub
+python-decouple
+requests
