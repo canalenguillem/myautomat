@@ -84,3 +84,4 @@ output/             # Carpeta de
 registro_videos.json
 
 data
+Backend/transcription_registry.json
