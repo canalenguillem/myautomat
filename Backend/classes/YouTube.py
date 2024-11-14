@@ -414,3 +414,68 @@ class YouTube:
 
         print(f"Artículo optimizado para SEO guardado en: {ruta_articulo}")
         return ruta_articulo
+    
+    def generar_tutorial_web(self, formato="Markdown", idioma="Castellano", MODEL='gpt-4-turbo'):
+        """
+        Genera un tutorial detallado en el idioma especificado basado en la transcripción del video.
+        Incluye comandos, explicaciones y otros elementos relevantes optimizados para SEO.
+        """
+        # Usa el ID del video o un nombre corto para evitar nombres de archivo largos
+        nombre_video = self.video_id or "tutorial_video"
+        directorio_base = os.path.dirname(self.transcription_path)
+        
+        # Determinar la extensión según el formato
+        if formato.lower() == "html":
+            extension = ".html"
+        elif formato.lower() == "markdown":
+            extension = ".md"
+        else:
+            extension = ".txt"  # Por defecto, si es un formato no especificado
+
+        # Crear la ruta completa del tutorial usando el idioma
+        carpeta_tutorial = os.path.join(directorio_base, f'tutorial_{nombre_video}')
+        if not os.path.exists(carpeta_tutorial):
+            os.makedirs(carpeta_tutorial)
+
+        ruta_tutorial = os.path.join(carpeta_tutorial, f'tutorial_{idioma}_{nombre_video[:50]}{extension}')
+
+        # Verificar si el tutorial ya existe en el idioma seleccionado
+        if os.path.exists(ruta_tutorial):
+            print("Tutorial en el idioma seleccionado ya existe. Leyendo desde:", ruta_tutorial)
+            return ruta_tutorial  # Devolver la ruta del archivo existente para evitar gastar tokens
+
+        # Leer la transcripción
+        with open(self.transcription_path, 'r', encoding='utf-8') as file:
+            prompt = file.read()
+
+        # Crear el sistema de prompt para generar un tutorial detallado optimizado para SEO
+        system_prompt = f"""
+            Generate a comprehensive tutorial from the transcription of a video, including commands, explanations, and all relevant details.
+            
+            Use the following guidelines for the tutorial:
+
+            - Write in the specified language `{idioma}`.
+            - Maintain a formal and instructional tone.
+            - Include detailed explanations, examples, commands, and steps where appropriate based on the topic.
+            - Use clear headings, bullet points, and subheadings to organize the content.
+            - Optimize for SEO by including relevant keywords related to the topic.
+            - Start with an introduction that explains the tutorial's objective and its importance.
+            - Conclude with a summary or next steps for the reader to apply the tutorial effectively.
+            - Add code snippets or commands as necessary in code blocks for technical topics.
+
+            The output should be consistent with the following parameters:
+            - Replace `{idioma}` with the correct language (e.g., Spanish, English).
+            - Format the tutorial according to `{formato}` (e.g., HTML, Markdown).
+        """
+
+        # Generar el tutorial con el modelo GPT
+        response = get_response_from_openai(system_prompt=system_prompt, prompt=prompt)
+
+        articulo = response
+
+        # Guardar el tutorial en el formato correspondiente
+        with open(ruta_tutorial, 'w', encoding='utf-8') as tutorial_file:
+            tutorial_file.write(articulo)
+
+        print(f"Tutorial optimizado para SEO guardado en: {ruta_tutorial}")
+        return ruta_tutorial  # Devolver la ruta del archivo generado

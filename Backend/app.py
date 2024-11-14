@@ -22,8 +22,8 @@ def youtube():
     if request.method == 'POST':
         url = request.form.get('url')
         generate_transcription = 'transcription' in request.form
-        generate_summary = 'summary' in request.form
-        idioma = request.form.get('language', 'Castellano')  # Obtener el idioma seleccionado, por defecto 'Castellano'
+        output_type = request.form.get('output_type', 'resumen')
+        idioma = request.form.get('language', 'Castellano')
 
         if not url:
             return jsonify({"success": False, "error": "URL no proporcionada"}), 400
@@ -33,19 +33,28 @@ def youtube():
             yt.descargar_mp3()
             yt.descargar_video()
 
-            result = {"success": True, "thumbnail": None, "summary": None}
+            result = {"success": True, "thumbnail": None, "output": None}
 
             if generate_transcription:
                 yt.transcribir_audio()
             
-            if generate_summary:
-                # Generar el resumen en el idioma seleccionado o cargar uno existente
+            if output_type == 'resumen':
                 resumen_path = yt.generara_resumen_video(idioma=idioma)
                 if resumen_path:
                     with open(resumen_path, 'r', encoding='utf-8') as f:
                         summary_markdown = f.read()
                         summary_html = markdown.markdown(summary_markdown)
-                        result["summary"] = summary_html
+                        result["output"] = summary_html
+            elif output_type == 'tutorial':
+                tutorial_path = yt.generar_tutorial_web(idioma=idioma)
+                if tutorial_path:
+                    with open(tutorial_path, 'r', encoding='utf-8') as f:
+                        tutorial_content = f.read()
+                        if tutorial_path.endswith('.md'):
+                            tutorial_html = markdown.markdown(tutorial_content)
+                        else:
+                            tutorial_html = tutorial_content
+                        result["output"] = tutorial_html
 
             yt.descargar_thumbnail()
             if yt.path_thumbnail:
@@ -53,16 +62,13 @@ def youtube():
                 thumbnail_path = os.path.join(THUMBNAIL_FOLDER, thumbnail_name)
                 shutil.move(yt.path_thumbnail, thumbnail_path)
                 result["thumbnail"] = url_for('static', filename=f'thumbnails/{thumbnail_name}')
-                
-            print(f"result: {result}")
+
             return jsonify(result)
         
         except Exception as e:
             return jsonify({"success": False, "error": str(e)}), 500
     else:
-        # Si es una solicitud GET, muestra el formulario
-        return render_template('youtube_form.html')
-        
+        return render_template('youtube_form.html')        
 @app.route('/audio', methods=['GET', 'POST'])
 def audio():
     if request.method == 'POST':
