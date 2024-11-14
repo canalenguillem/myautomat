@@ -1,0 +1,20 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h2>Subir Archivo MP3</h2>
+<form method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="audio_file">Archivo MP3:</label>
+        <input type="file" id="audio_file" name="audio_file" class="form-control-file" accept=".mp3" required>
+    </div>
+    <div class="form-check">
+        <input type="checkbox" id="transcription" name="transcription" class="form-check-input">
+        <label class="form-check-label" for="transcription">Generar Transcripción</label>
+    </div>
+    <div class="form-check">
+        <input type="checkbox" id="summary" name="summary" class="form-check-input">
+        <label class="form-check-label" for="summary">Generar Resumen</label>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">Subir y Procesar Audio</button>
+</form>
+{% endblock %}

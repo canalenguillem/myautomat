@@ -286,23 +286,42 @@ class YouTube:
 
 
 
+
     def generara_resumen_video(self, formato="Markdown", idioma="Castellano", MODEL='gpt-4-turbo'):
         """
-        Genera un resumen del video en formato Markdown.
+        Genera un resumen del video en el idioma especificado y formato Markdown.
         """
-        path=self.transcription_path
-        # Lee el contenido del archivo de texto
+        # Usa el ID del video o un nombre corto para evitar nombres de archivo largos
+        nombre_video = self.video_id or "resumen_video"
+        directorio_base = os.path.dirname(self.transcription_path)
+        
+        # Determinar la extensión según el formato
+        if formato.lower() == "markdown":
+            extension = ".md"
+        elif formato.lower() == "html":
+            extension = ".html"
+        else:
+            extension = ".txt"  # Por defecto, si es un formato no especificado
+
+        # Crear la ruta completa del resumen usando el idioma
+        carpeta_resumen = os.path.join(directorio_base, f'resumen_{nombre_video}')
+        if not os.path.exists(carpeta_resumen):
+            os.makedirs(carpeta_resumen)
+
+        ruta_resumen = os.path.join(carpeta_resumen, f'resumen_{idioma}_{nombre_video[:50]}{extension}')
+
+        # Verificar si el resumen ya existe en el idioma seleccionado
+        if os.path.exists(ruta_resumen):
+            print("Resumen en el idioma seleccionado ya existe. Leyendo desde:", ruta_resumen)
+            return ruta_resumen  # Devolver la ruta del archivo existente para evitar gastar tokens
+
+        # Leer la transcripción
         with open(self.transcription_path, 'r', encoding='utf-8') as file:
             prompt = file.read()
 
-        # Extraemos el nombre del video (sin extensión)
-        nombre_video = os.path.basename(self.transcription_path).replace('.txt', '')
-        directorio_base = os.path.dirname(path)
-
-        
-        # Creamos el sistema de prompt para generar un resumen de video
-        system_prompt=f"""
-            Generate a summary from the transcription of a video, including a detailed introduction, explanation of key points, and a final conclusion. 
+        # Crear el sistema de prompt para generar un resumen de video
+        system_prompt = f"""
+            Generate a summary from the transcription of a video, including a detailed introduction, explanation of key points, and a final conclusion.
 
             Use the following guidelines for the summary:
 
@@ -323,55 +342,20 @@ class YouTube:
             The output should be consistent with the following parameters:
             - Replace `{idioma}` with the correct language (e.g., Spanish, English).
             - Replace `{formato}` with the suitable format (e.g., plaintext, HTML).
-
-            # Examples
-
-            Input: (Fragment of the transcribed video)
-            "Hoy les traigo una lista de consejos imprescindibles para mejorar la productividad..."
-
-            Output: 
-
-            **Introducción:** En la actualidad, ser productivo se ha vuelto un desafío importante debido a la cantidad de distracciones y el ritmo acelerado del día a día. A continuación, os presento algunos de los mejores consejos para mejorar nuestra productividad.
-
-            **Puntos clave detallados:**
-            1. **Define metas claras:** Es esencial establecer objetivos que sean alcanzables y específicos.
-            2. **Elimina distracciones:** Identifica las fuentes de distracción y toma medidas para reducirlas.
-            3. **Administra tu tiempo adecuadamente:** Utiliza técnicas como la del Pomodoro para dividir tu trabajo en intervalos manejables.
-
-            **Conclusión:** Estos consejos son fundamentales para ayudarte a mejorar tu productividad en el trabajo y en la vida diaria. Pon en práctica estas recomendaciones y notarás una diferencia significativa. Si quieres saber más, no dudes en ver nuestro video completo.
-
-            # Notes
-
-            - Ensure that the explanation of key points balances between detail and brevity.
-            - Adapt tone and language to suit the given `{idioma}` and required `{formato}` to ensure consistency.
-
         """
 
-        response =get_response_from_openai(system_prompt=system_prompt,prompt=prompt)
+        # Generar el resumen con el modelo GPT
+        response = get_response_from_openai(system_prompt=system_prompt, prompt=prompt)
 
         articulo = response
-
-        # Determinar la extensión según el formato
-        if formato.lower() == "markdown":
-            extension = ".md"
-        elif formato.lower() == "html":
-            extension = ".html"
-        else:
-            extension = ".txt"  # Por defecto, si es un formato no especificado
-
-        # Crear el nombre del archivo para el artículo de blog
-        carpeta_resumen = os.path.join(directorio_base, 'resumen_' + nombre_video)
-        if not os.path.exists(carpeta_resumen):
-            os.makedirs(carpeta_resumen)
-
-        ruta_resumen = os.path.join(carpeta_resumen, f'resumen_{nombre_video}{extension}')
 
         # Guardar el artículo en el formato correspondiente
         with open(ruta_resumen, 'w', encoding='utf-8') as resumen_file:
             resumen_file.write(articulo)
 
         print(f"Artículo optimizado para SEO guardado en: {ruta_resumen}")
-        return ruta_resumen
+        return ruta_resumen  # Devolver la ruta del archivo generado
+
 
 
     def generar_articulo_blog(self, formato="Markdown", idioma="Castellano", MODEL='gpt-4-turbo'):

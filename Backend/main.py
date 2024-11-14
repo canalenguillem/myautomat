@@ -27,9 +27,16 @@ def main():
         # print(f"Transcripción:\n{transcripcion}")
 
         # Generar resumen de la transcripción
-        resumen = audio.get_summary(idioma="Catala")
-        print(f"Resumen:\n{resumen}")
-        # context="Estic parlant de n'Izan un alumne que té dificultats de socialització amb els companys i que va molt endarrerit, la tutora m'ha demanat com va i aquest es el resum"
+        # resumen = audio.get_summary(idioma="Catala")
+        # print(f"Resumen:\n{resumen}")
+        context="""
+        Aquesta transcripció és l'enunciat d'una practica, per tan has de escriure un enunciat
+        on s'indiquin les passes que s'han de fer i les instructions de lliurament
+        
+        """
+
+        enunciado=audio.get_enunciado(idioma="Catala",context=context)
+                                      
         # correo = audio.get_mail(idioma="Catala",context=context)
         # print(f"Correo electrónico:\n{correo}")
 

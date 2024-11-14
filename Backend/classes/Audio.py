@@ -271,3 +271,52 @@ class Audio:
         except Exception as e:
             print(f"Error al generar la respuesta de correo: {e}")
             return None
+        
+    def get_enunciado(self, idioma="Castellano", format="Markdown", context=None):
+        """
+        Genera una enunciado de una practia
+        """
+        response_path = self.generate_response_path(format)
+
+        if self.check_if_mail_generated():
+            print(f"Respuesta ya existente. Leyendo desde: {response_path}")
+            with open(response_path, 'r', encoding='utf-8') as f:
+                return f.read()
+
+        transcription_text = ""
+        try:
+            with open(self.transcription_path, 'r', encoding='utf-8') as f:
+                transcription_text = f.read()
+
+            system_prompt = f"""
+                Eres un experto en análisis de contenido. A partir de la transcripción proporcionada de una conversación,
+                debes generar un enunciado para un tarea de classroom 
+                
+                **Instrucciones detalladas:**
+                - Haz una introducción de los contenidos de la tarea
+                - Explica detalladamente, los pasos que deben realizar los alumnos
+                - Usa subtítulos H2 para separar las diferentes secciones temáticas de la tarea.
+                - Asegúrate de que el análisis sea claro y exhaustivo.
+                - En ningún caso hagas referencia a la transcripción ni a la conversación
+
+                
+                {context}
+                
+                El resultado debe estar en formato {format} y en el idioma {idioma}.
+                """
+            if context:
+                system_prompt += f"\n\nContexto adicional:\n\n{context}"
+
+            prompt = transcription_text
+            mail_response = get_response_from_openai(system_prompt=system_prompt, prompt=prompt)
+
+            with open(response_path, 'w', encoding='utf-8') as f:
+                f.write(mail_response)
+            
+            self.register_mail_response(response_path)
+            print(f"Respuesta de correo guardada en: {response_path}")
+            return mail_response
+
+        except Exception as e:
+            print(f"Error al generar la respuesta de correo: {e}")
+            return None

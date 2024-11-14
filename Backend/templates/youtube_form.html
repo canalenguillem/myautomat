@@ -1,0 +1,71 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h2>Procesar Video de YouTube</h2>
+<form id="youtubeForm">
+    <div class="form-group">
+        <label for="url">URL del Video de YouTube:</label>
+        <input type="text" id="url" name="url" class="form-control" required>
+    </div>
+    <div class="form-check">
+        <input type="checkbox" id="transcription" name="transcription" class="form-check-input">
+        <label class="form-check-label" for="transcription">Generar Transcripción</label>
+    </div>
+    <div class="form-check">
+        <input type="checkbox" id="summary" name="summary" class="form-check-input">
+        <label class="form-check-label" for="summary">Generar Resumen</label>
+    </div>
+    <div class="form-group mt-3">
+        <label for="language">Selecciona el idioma del resumen:</label>
+        <select id="language" name="language" class="form-control">
+            <option value="Castellano">Castellano</option>
+            <option value="Inglés">Inglés</option>
+            <option value="Catalán">Catalán</option>
+        </select>
+    </div>
+    <button type="button" class="btn btn-primary mt-3" onclick="processVideo()">Procesar Video</button>
+</form>
+
+<!-- Div para mostrar la miniatura y el resumen -->
+<div id="thumbnailDiv" class="mt-4" style="display: none;">
+    <h4>Miniatura del Video:</h4>
+    <img id="thumbnailImg" src="" alt="Miniatura" class="img-fluid">
+</div>
+<div id="summaryDiv" class="mt-4" style="display: none;">
+    <h4>Resumen del Video:</h4>
+    <div id="summaryText"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function processVideo() {
+        const formData = new FormData(document.getElementById('youtubeForm'));
+
+        $.ajax({
+            url: "{{ url_for('youtube') }}",
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                if (response.success) {
+                    if (response.thumbnail) {
+                        $('#thumbnailImg').attr('src', response.thumbnail);
+                        $('#thumbnailDiv').show();
+                    }
+                    if (response.summary) {
+                        $('#summaryText').html(response.summary); // Insertar como HTML
+                        $('#summaryDiv').show();
+                    }
+                } else {
+                    alert("Error: " + (response.error || "Ocurrió un error desconocido"));
+                }
+            },
+            error: function (jqXHR) {
+                const errorMessage = jqXHR.responseJSON?.error || "Error desconocido en el servidor";
+                alert("Error: " + errorMessage);
+            }
+        });
+    }
+</script>
+{% endblock %}
