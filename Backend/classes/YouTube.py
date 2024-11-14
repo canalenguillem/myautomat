@@ -479,3 +479,100 @@ class YouTube:
 
         print(f"Tutorial optimizado para SEO guardado en: {ruta_tutorial}")
         return ruta_tutorial  # Devolver la ruta del archivo generado
+    
+    def generar_descripcion_seo(self, idioma="Castellano"):
+        """
+        Genera un título y una descripción optimizada para SEO del video en el idioma especificado.
+        El resultado se guarda en un archivo Markdown.
+        """
+        # Usa el ID del video o un nombre corto para evitar nombres de archivo largos
+        nombre_video = self.video_id or "descripcion_video"
+        directorio_base = os.path.dirname(self.transcription_path)
+        
+        # Ruta del archivo Markdown con el idioma seleccionado
+        carpeta_descripcion = os.path.join(directorio_base, f'descripcion_{nombre_video}')
+        if not os.path.exists(carpeta_descripcion):
+            os.makedirs(carpeta_descripcion)
+
+        ruta_descripcion = os.path.join(carpeta_descripcion, f'descripcion_{idioma}_{nombre_video[:50]}.md')
+
+        # Verifica si la descripción ya existe en el idioma seleccionado
+        if os.path.exists(ruta_descripcion):
+            print("Descripción en el idioma seleccionado ya existe. Leyendo desde:", ruta_descripcion)
+            with open(ruta_descripcion, 'r', encoding='utf-8') as file:
+                lines = file.readlines()
+                title = lines[0].replace("# ", "").strip()
+            return ruta_descripcion, title  # Devuelve la ruta del archivo existente
+
+        # Lee la transcripción
+        with open(self.transcription_path, 'r', encoding='utf-8') as file:
+            prompt = file.read()
+
+        # Sistema de prompt para generar la descripción con el título y emojis
+        system_prompt = f"""
+            Generate a SEO-optimized title and description for a YouTube video in the specified language `{idioma}`.
+
+            The title should be captivating and concise, incorporating relevant emojis to enhance visual appeal. The description should clearly summarize the video, highlight key points, and use emojis to add emphasis. Use Markdown to format both elements.
+
+            # Steps
+
+            1. **Title Generation**:
+            - Ensure the title is concise and attention-grabbing.
+            - Identify important keywords for SEO and use them effectively.
+            - Add emojis that match the video's theme or mood without overuse.
+
+            2. **Description Generation**:
+            - Provide a brief summary focusing on the main points of the video content.
+            - Include bullet points of the contents
+            - Include key phrases for SEO.
+            - Use emojis selectively for emphasis and engagement.
+            - Use Markdown formatting.
+
+            The output should follow the provided template format:
+
+            # Output Format
+
+            ### Format:
+            ```
+            # Title
+            Description text here.
+            ```
+            - Replace "Title" with an engaging and SEO-optimized title.
+            - Provide a detailed description below the title, including emojis for enhancement.
+
+            # Examples
+
+            **Example 1**:
+
+            ```
+            # 🌟 Master the Art of Meditation in Just 5 Minutes! 🧘‍♂️
+            Discover the secrets of effective meditation to reduce stress and cultivate mindfulness. 🌼 Learn step-by-step tips to relax in under 5 minutes with practical and easy-to-follow techniques. 🕒✨
+            ```
+
+            (Note: Real YouTube titles should be 60 characters or less, and descriptions should provide enough information without being too lengthy for user engagement.)
+
+            **Example 2**:
+
+            ```
+            # 🍔 Ultimate Guide to Making the Perfect Burger at Home 😋
+            Learn how to create a juicy and flavorful home-made burger that’ll impress everyone! 🍖🔥 Follow these simple steps, explore secret ingredients, and see how to build your next favorite meal from scratch. 🏠🍔
+            ```
+
+            # Notes
+
+            - Keep the title under 60 characters and make it engaging.
+            - Be careful not to overuse emojis; make them relevant and enhance the readability.
+            - Use keywords naturally to improve SEO.
+        """
+
+        # Genera la respuesta con el modelo GPT
+        response = get_response_from_openai(system_prompt=system_prompt, prompt=prompt)
+
+        # Guarda la respuesta en formato Markdown
+        with open(ruta_descripcion, 'w', encoding='utf-8') as descripcion_file:
+            descripcion_file.write(response)
+
+        # Procesa el título de la respuesta para devolverlo por separado
+        title = response.splitlines()[0].replace("# ", "").strip()
+        print(f"Descripción optimizada para SEO guardada en: {ruta_descripcion}")
+        return ruta_descripcion, title  # Devuelve la ruta del archivo generado y el título

@@ -12,10 +12,11 @@
         <label class="form-check-label" for="transcription">Generar Transcripción</label>
     </div>
     <div class="form-group mt-3">
-        <label for="output_type">Selecciona el tipo de salida:</label>
-        <select id="output_type" name="output_type" class="form-control">
-            <option value="resumen">Resumen</option>
-            <option value="tutorial">Tutorial</option>
+        <label for="type">Selecciona el tipo de contenido a generar:</label>
+        <select id="type" name="type" class="form-control">
+            <option value="summary">Generar Resumen</option>
+            <option value="tutorial">Generar Tutorial</option>
+            <option value="description">Generar Descripción SEO</option>
         </select>
     </div>
     <div class="form-group mt-3">
@@ -34,9 +35,9 @@
     <h4>Miniatura del Video:</h4>
     <img id="thumbnailImg" src="" alt="Miniatura" class="img-fluid">
 </div>
-<div id="summaryDiv" class="mt-4" style="display: none;">
-    <h4 id="outputTypeTitle">Resumen/Tutorial del Video:</h4>
-    <div id="summaryText"></div>
+<div id="contentDiv" class="mt-4" style="display: none;">
+    <h4>Contenido Generado:</h4>
+    <div id="contentText"></div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -56,14 +57,9 @@
                         $('#thumbnailImg').attr('src', response.thumbnail);
                         $('#thumbnailDiv').show();
                     }
-                    if (response.output) {
-                        // Cambiar el título en función del tipo de salida seleccionado
-                        const outputType = $('#output_type').val();
-                        const title = outputType === "tutorial" ? "Tutorial del Video:" : "Resumen del Video:";
-                        $('#outputTypeTitle').text(title);
-
-                        $('#summaryText').html(response.output); // Insertar como HTML
-                        $('#summaryDiv').show();
+                    if (response.content) {
+                        $('#contentText').html(response.content); // Insertar como HTML
+                        $('#contentDiv').show();
                     }
                 } else {
                     alert("Error: " + (response.error || "Ocurrió un error desconocido"));
