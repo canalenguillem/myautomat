@@ -23,7 +23,6 @@ def get_response_from_openai(system_prompt, prompt,format="Markdown", idioma="Ca
         {'role': 'system', 'content': system_prompt},
         {'role': 'user', 'content': prompt}
     ]
-    print(messages)
     # Generar el artículo usando el modelo GPT
     response = client.chat.completions.create(
         model=MODEL,

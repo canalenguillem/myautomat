@@ -15,10 +15,10 @@ def main():
         yt = YouTube(url=args.url)
         yt.descargar_mp3()
         yt.descargar_video()
-        yt.transcribir_audio()
-        yt.descargar_thumbnail()
-        resultado = yt.generara_resumen_video()
-        print(f"El resumen del video es:\n{resultado}")
+        # yt.transcribir_audio()
+        # yt.descargar_thumbnail()
+        # resultado = yt.generara_resumen_video()
+        # print(f"El resumen del video es:\n{resultado}")
         
     elif args.audio:
         # Si se proporciona el archivo MP3, transcribirlo usando la clase Audio
@@ -27,8 +27,11 @@ def main():
         # print(f"Transcripción:\n{transcripcion}")
 
         # Generar resumen de la transcripción
-        resumen = audio.get_summary()
+        resumen = audio.get_summary(idioma="Catala")
         print(f"Resumen:\n{resumen}")
+        # context="Estic parlant de n'Izan un alumne que té dificultats de socialització amb els companys i que va molt endarrerit, la tutora m'ha demanat com va i aquest es el resum"
+        # correo = audio.get_mail(idioma="Catala",context=context)
+        # print(f"Correo electrónico:\n{correo}")
 
     else:
         print("Debes proporcionar la URL del video de YouTube con --url o la ruta del archivo MP3 con --audio.")

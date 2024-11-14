@@ -144,15 +144,34 @@ class Audio:
             with open(self.transcription_path, 'r', encoding='utf-8') as f:
                 transcription_text = f.read()
 
-            system_prompt = f"""
+            # Generar el resumen
+            system_prompt=f"""
                 Resume el contenido de la transcripción de un audio.
 
                 # Parámetros
-                - **Idioma del resumen**: {idioma}
-                - **Formato de salida**: {format}
 
-                # Output
-                Genera el resumen en el idioma y formato especificado.
+                - **Idioma del resumen**: El resumen debe ser entregado en el idioma especificado por la variable `{idioma}`.
+                - **Formato de salida**: El resumen debe entregarse en el formato deseado según la variable `{format}`.
+
+                # Pasos
+
+                1. Lee toda la transcripción y comprende los puntos clave y el contexto general.
+                2. Identifica las ideas principales y la información relevante discutida en el audio.
+                3. Condensa esas ideas principales y elimina detalles irrelevantes, garantizando que el resultado sea un resumen conciso pero completo.
+                4. Asegúrate de que el resumen mantenga la claridad y transmita las partes clave sin grandes omisiones ni adiciones innecesarias.
+
+                # Output Format
+
+                El resumen debe:
+
+                - **Idioma**: Estar en el idioma especificado por la variable `{idioma}`.
+                - **Formato**: La salida estará en el formato que se indique en la variable `{format}`. Por ejemplo:
+
+                ### Parámetros
+                `{idioma}`: Español  
+                `{format}`: texto simple
+
+                (Asegúrate de que el real ejemplo tenga más o menos el mismo nivel de detalle ajustado al contexto, pudiendo variar en longitud según la complejidad de la transcripción relacionada.)
             """
             if context:
                 system_prompt += f"\n\nContexto:\n\n{context}"
@@ -169,4 +188,86 @@ class Audio:
 
         except Exception as e:
             print(f"Error al generar el resumen: {e}")
+            return None
+        
+    def generate_response_path(self, format="txt"):
+        """
+        Genera el nombre del archivo de respuesta en el mismo directorio que el archivo MP3.
+        Si el formato es Markdown, utiliza la extensión .md.
+        """
+        base_name = os.path.splitext(os.path.basename(self.path_mp3))[0]
+        extension = "md" if format.lower() == "markdown" else "txt"
+        response_file = f"respuesta_email_{base_name}.{extension}"
+        return os.path.join(os.path.dirname(self.path_mp3), response_file)
+    
+    def check_if_mail_generated(self):
+        """
+        Verifica si la respuesta de correo ya ha sido generada consultando el registro.
+        """
+        registry = self.load_registry()
+        entry = registry.get(self.audio_id)
+        
+        if isinstance(entry, dict) and "mail_response" in entry:
+            return entry["mail_response"]
+        return None
+    
+    def register_mail_response(self, response_path):
+        """
+        Registra la respuesta del correo en el archivo de registro.
+        """
+        registry = self.load_registry()
+        if not isinstance(registry.get(self.audio_id), dict):
+            registry[self.audio_id] = {}
+        
+        registry[self.audio_id]["mail_response"] = response_path
+        self.save_registry(registry)
+    
+
+    def get_mail(self, idioma="Castellano", format="Markdown", context=None):
+        """
+        Genera una respuesta de correo electrónico a partir de la transcripción y la guarda en un archivo.
+        """
+        response_path = self.generate_response_path(format)
+
+        if self.check_if_mail_generated():
+            print(f"Respuesta ya existente. Leyendo desde: {response_path}")
+            with open(response_path, 'r', encoding='utf-8') as f:
+                return f.read()
+
+        transcription_text = ""
+        try:
+            with open(self.transcription_path, 'r', encoding='utf-8') as f:
+                transcription_text = f.read()
+
+            system_prompt = f"""
+                Eres un experto en análisis de contenido. A partir de la transcripción proporcionada de una conversación,
+                debes generar un documento que explique en detalle lo que se dice, analizando el contenido y proporcionando
+                una descripción clara y organizada. 
+                
+                **Instrucciones detalladas:**
+                - Explica con todo detalle los temas principales de la conversación.
+                - Explica detalladamente, no resumas lo que se dice en cada parte de la conversación.
+                - Usa subtítulos H2 para separar las diferentes secciones temáticas de la conversación.
+                - Asegúrate de que el análisis sea claro y exhaustivo.
+                - En ningún caso hagas referencia a la transcripción ni a la conversación
+                - Utiliza el mimo tiempo verbal
+                {context}
+                
+                El resultado debe estar en formato {format} y en el idioma {idioma}.
+                """
+            if context:
+                system_prompt += f"\n\nContexto adicional:\n\n{context}"
+
+            prompt = transcription_text
+            mail_response = get_response_from_openai(system_prompt=system_prompt, prompt=prompt)
+
+            with open(response_path, 'w', encoding='utf-8') as f:
+                f.write(mail_response)
+            
+            self.register_mail_response(response_path)
+            print(f"Respuesta de correo guardada en: {response_path}")
+            return mail_response
+
+        except Exception as e:
+            print(f"Error al generar la respuesta de correo: {e}")
             return None

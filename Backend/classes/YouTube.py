@@ -5,6 +5,7 @@ import json
 from pydub import AudioSegment
 from Gpt import transcribe_audio,get_response_from_openai
 import requests
+from utils import generate_id_from_url
 
 
 
@@ -76,9 +77,11 @@ class YouTube:
             match = re.search(patron, self.url)
             if match:
                 return match.group(1)
-        
-        print("No se pudo extraer el ID del video.")
-        return None  # En caso de que no se encuentre un ID válido
+        idX=generate_id_from_url(self.url)
+        if idX =="unknown_id":
+            print("No se pudo extraer el ID del video.")
+            return None  # En caso de que no se encuentre un ID válido
+        return idX
     def eliminar_emojis(self, text):
         """
         Elimina emojis y otros caracteres especiales del texto,
