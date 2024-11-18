@@ -59,8 +59,10 @@ def youtube():
                 if description_path:
                     with open(description_path, 'r', encoding='utf-8') as f:
                         description_content = f.read()
+                        description_html = markdown.markdown(description_content)
+
                         # Formato con párrafos independientes para el título y la descripción
-                        result["content"] = f"<p><strong>Título:</strong> {title}</p><p><strong>Descripción:</strong> {description_content}</p>"
+                        result["content"] = f"<p><strong>Título:</strong> {title}</p><p><strong>Descripción:</strong><br> {description_html}</p>"
 
             # Descargar miniatura del video
             yt.descargar_thumbnail()

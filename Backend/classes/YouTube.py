@@ -154,6 +154,14 @@ class YouTube:
             titulo = info_dict.get('title', 'video')
             titulo_sanitizado = self.eliminar_emojis(titulo)
             titulo_sanitizado = re.sub(r'[\/:*?"<>|]', '', titulo_sanitizado)
+            if len(titulo_sanitizado) > 51:
+                print("------------------------")
+                print("------------------------")
+                print(f"---{titulo_sanitizado}--------------")
+                print("------------------------")
+                print("------------------------")
+                titulo_sanitizado=titulo_sanitizado[0:50]
+                print(f"---{titulo_sanitizado}--------------")
 
         video_dir = os.path.join(base_dir, titulo_sanitizado)
         os.makedirs(video_dir, exist_ok=True)
@@ -511,58 +519,14 @@ class YouTube:
         # Sistema de prompt para generar la descripción con el título y emojis
         system_prompt = f"""
             Generate a SEO-optimized title and description for a YouTube video in the specified language `{idioma}`.
-
-            The title should be captivating and concise, incorporating relevant emojis to enhance visual appeal. The description should clearly summarize the video, highlight key points, and use emojis to add emphasis. Use Markdown to format both elements.
-
-            # Steps
-
-            1. **Title Generation**:
-            - Ensure the title is concise and attention-grabbing.
-            - Identify important keywords for SEO and use them effectively.
-            - Add emojis that match the video's theme or mood without overuse.
-
-            2. **Description Generation**:
-            - Provide a brief summary focusing on the main points of the video content.
-            - Include bullet points of the contents
-            - Include key phrases for SEO.
-            - Use emojis selectively for emphasis and engagement.
-            - Use Markdown formatting.
-
-            The output should follow the provided template format:
-
-            # Output Format
-
-            ### Format:
-            ```
+            - The title should be concise, engaging, and include relevant emojis to catch attention.
+            - The description should provide a clear summary, mention key points of the video, and also include emojis for emphasis.
+            - Write both in Markdown format.
+            
+            Format output as:
+            
             # Title
             Description text here.
-            ```
-            - Replace "Title" with an engaging and SEO-optimized title.
-            - Provide a detailed description below the title, including emojis for enhancement.
-
-            # Examples
-
-            **Example 1**:
-
-            ```
-            # 🌟 Master the Art of Meditation in Just 5 Minutes! 🧘‍♂️
-            Discover the secrets of effective meditation to reduce stress and cultivate mindfulness. 🌼 Learn step-by-step tips to relax in under 5 minutes with practical and easy-to-follow techniques. 🕒✨
-            ```
-
-            (Note: Real YouTube titles should be 60 characters or less, and descriptions should provide enough information without being too lengthy for user engagement.)
-
-            **Example 2**:
-
-            ```
-            # 🍔 Ultimate Guide to Making the Perfect Burger at Home 😋
-            Learn how to create a juicy and flavorful home-made burger that’ll impress everyone! 🍖🔥 Follow these simple steps, explore secret ingredients, and see how to build your next favorite meal from scratch. 🏠🍔
-            ```
-
-            # Notes
-
-            - Keep the title under 60 characters and make it engaging.
-            - Be careful not to overuse emojis; make them relevant and enhance the readability.
-            - Use keywords naturally to improve SEO.
         """
 
         # Genera la respuesta con el modelo GPT
