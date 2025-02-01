@@ -1,3 +1,4 @@
+from pydub import AudioSegment
 import os
 import json
 import hashlib
@@ -19,15 +20,12 @@ class Audio:
         transcription_file = f"transcripcion_{base_name}.txt"
         return os.path.join(os.path.dirname(self.path_mp3), transcription_file)
 
-    def generate_summary_path(self, format="txt"):
+    def generate_segment_path(self, segment_index):
         """
-        Genera el nombre del archivo de resumen en el mismo directorio que el archivo MP3.
-        Si el formato es Markdown, utiliza la extensión .md.
+        Genera un nombre único para cada segmento de audio.
         """
         base_name = os.path.splitext(os.path.basename(self.path_mp3))[0]
-        extension = "md" if format.lower() == "markdown" else "txt"
-        summary_file = f"summary_{base_name}.{extension}"
-        return os.path.join(os.path.dirname(self.path_mp3), summary_file)
+        return os.path.join(os.path.dirname(self.path_mp3), f"{base_name}_segment_{segment_index}.mp3")
 
     def get_audio_id(self):
         """
@@ -40,74 +38,51 @@ class Audio:
         return hasher.hexdigest()
 
     def load_registry(self):
-        """
-        Carga el registro de transcripciones desde un archivo JSON.
-        """
         if os.path.exists(self.REGISTRY_FILE):
             with open(self.REGISTRY_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         return {}
 
     def save_registry(self, registry):
-        """
-        Guarda el registro de transcripciones en un archivo JSON.
-        """
         with open(self.REGISTRY_FILE, "w", encoding="utf-8") as f:
             json.dump(registry, f, indent=4)
 
     def check_if_transcribed(self):
-        """
-        Verifica si el audio ya fue transcrito consultando el registro.
-        """
         registry = self.load_registry()
         entry = registry.get(self.audio_id)
-        
-        # Asegurarse de que `entry` sea un diccionario
-        if isinstance(entry, dict) and "transcription" in entry:
-            return entry["transcription"]
-        return None
-
-    def check_if_summarized(self):
-        """
-        Verifica si el resumen del audio ya existe consultando el registro.
-        """
-        registry = self.load_registry()
-        entry = registry.get(self.audio_id)
-        
-        # Asegurarse de que `entry` sea un diccionario
-        if isinstance(entry, dict) and "summary" in entry:
-            return entry["summary"]
-        return None
+        return isinstance(entry, dict) and "transcription" in entry
 
     def register_transcription(self):
-        """
-        Registra la transcripción del audio en el archivo de registro.
-        """
         registry = self.load_registry()
-        
-        # Asegurarse de que la entrada para este audio sea un diccionario
         if not isinstance(registry.get(self.audio_id), dict):
             registry[self.audio_id] = {}
-        
         registry[self.audio_id]["transcription"] = self.transcription_path
         self.save_registry(registry)
 
-    def register_summary(self, summary_path):
+    def divide_audio(self, segment_length=300):
         """
-        Registra el resumen del audio en el archivo de registro.
+        Divide el archivo de audio en segmentos de la longitud especificada.
         """
-        registry = self.load_registry()
-        
-        # Asegurarse de que la entrada para este audio sea un diccionario
-        if not isinstance(registry.get(self.audio_id), dict):
-            registry[self.audio_id] = {}
-        
-        registry[self.audio_id]["summary"] = summary_path
-        self.save_registry(registry)
+        audio = AudioSegment.from_file(self.path_mp3)
+        segments = []
+        for i in range(0, len(audio), segment_length * 1000):  # Convertir segundos a milisegundos
+            segments.append(audio[i:i + segment_length * 1000])
+        return segments
 
-    def transcribe(self):
+    def save_audio_segments(self, segments):
         """
-        Transcribe el audio si aún no ha sido transcrito y guarda la transcripción.
+        Guarda los segmentos de audio como archivos individuales.
+        """
+        segment_paths = []
+        for idx, segment in enumerate(segments):
+            segment_path = self.generate_segment_path(idx)
+            segment.export(segment_path, format="mp3")
+            segment_paths.append(segment_path)
+        return segment_paths
+
+    def transcribe_long_audio(self):
+        """
+        Divide el audio en segmentos, los transcribe y guarda la transcripción completa.
         """
         if self.check_if_transcribed():
             print(f"El archivo '{self.path_mp3}' ya fue transcrito. Leyendo transcripción existente.")
@@ -115,208 +90,117 @@ class Audio:
                 return f.read()
 
         try:
-            transcription = transcribe_audio(self.path_mp3)
+            segments = self.divide_audio()
+            segment_paths = self.save_audio_segments(segments)
+
+            full_transcription = ""
+            for segment_path in segment_paths:
+                transcription = transcribe_audio(segment_path)
+                full_transcription += transcription + "\n"
+                os.remove(segment_path)  # Eliminar el archivo de segmento
+
             with open(self.transcription_path, 'w', encoding='utf-8') as f:
-                f.write(transcription)
+                f.write(full_transcription)
             
             self.register_transcription()
-            print(f"Transcripción guardada en: {self.transcription_path}")
-            return transcription
+            print(f"Transcripción completa guardada en: {self.transcription_path}")
+            return full_transcription
 
         except Exception as e:
             print(f"Error al transcribir el audio: {e}")
             return None
-
-    def get_summary(self, idioma="Castellano", format="Markdown", context=None):
+        
+    def tutoria(self,alumno,asistentes="Tutor del centro",idioma="Catalán",context=""):
+        print("muntant tutoria")
+        system_prompt="""
+            Eres un analista de transcripciones y a partir de ellas 
+            debes generar lo que se te pida a través de la trascipción
+            y la petición de prompt que te hagan.
         """
-        Genera un resumen de la transcripción y lo guarda en el mismo directorio con extensión adecuada.
+        with open(self.transcription_path, 'r', encoding='utf-8') as file:
+            # Lee el contenido del archivo y lo asigna a una variable
+            transcription_content = file.read()
+
+        prompt=f"""
+            A partir de la transcipció que he tenido de la tutoria del alumno
+            {alumno} con los asistentes {asistentes} quiero la información para 
+            completar los campos del formulario de tutoria siguientes:
+            - Observacions per a la convocatòria (surt a la web de famílies com a convocatòria i acta):
+            - Assistents (surt a la web de famílies si s'ha publicat l'acta):
+            - Seguiments acords anteriors (surt a la web de famílies si s'ha publicat l'acta):
+            - Temes tractats (surt a la web de famílies si s'ha publicat l'acta):
+            - Acords presos (surt a la web de famílies si s'ha publicat l'acta):
+
+            Quiero una informació detallada en base a la transcripción trantado todos los tema a modo de acta.
+
+            TRANSCIPCION DE LA TUTORIA: 
+            {transcription_content}
+
         """
-        # Establecer la ruta del archivo de resumen con la extensión correcta
-        summary_path = self.generate_summary_path(format)
+        if context!="":
+            prompt += f"\n\nCONTEXTO: {context}"
 
-        if self.check_if_summarized():
-            print(f"Resumen ya existente. Leyendo desde: {summary_path}")
-            with open(summary_path, 'r', encoding='utf-8') as f:
-                return f.read()
+        resposta = get_response_from_openai(system_prompt,prompt,format="Markdown",idioma=idioma)
+        print("--------------------------------")
+        print(resposta)
+        print("--------------------------------")
+        file_name = os.path.splitext(os.path.basename(self.transcription_path))[0]
+        markdown_file_name = f"tutoria_{file_name}.md"
+        print(markdown_file_name)
 
-        transcription_text = ""
-        try:
-            with open(self.transcription_path, 'r', encoding='utf-8') as f:
-                transcription_text = f.read()
+        with open(markdown_file_name, 'w', encoding='utf-8') as md_file:
+            print("--------------------------------")
+            print("escribiendo fichero")
+            print("--------------------------------")
 
-            # Generar el resumen
-            system_prompt=f"""
-                Resume el contenido de la transcripción de un audio.
-
-                # Parámetros
-
-                - **Idioma del resumen**: El resumen debe ser entregado en el idioma especificado por la variable `{idioma}`.
-                - **Formato de salida**: El resumen debe entregarse en el formato deseado según la variable `{format}`.
-
-                # Pasos
-
-                1. Lee toda la transcripción y comprende los puntos clave y el contexto general.
-                2. Identifica las ideas principales y la información relevante discutida en el audio.
-                3. Condensa esas ideas principales y elimina detalles irrelevantes, garantizando que el resultado sea un resumen conciso pero completo.
-                4. Asegúrate de que el resumen mantenga la claridad y transmita las partes clave sin grandes omisiones ni adiciones innecesarias.
-
-                # Output Format
-
-                El resumen debe:
-
-                - **Idioma**: Estar en el idioma especificado por la variable `{idioma}`.
-                - **Formato**: La salida estará en el formato que se indique en la variable `{format}`. Por ejemplo:
-
-                ### Parámetros
-                `{idioma}`: Español  
-                `{format}`: texto simple
-
-                (Asegúrate de que el real ejemplo tenga más o menos el mismo nivel de detalle ajustado al contexto, pudiendo variar en longitud según la complejidad de la transcripción relacionada.)
-            """
-            if context:
-                system_prompt += f"\n\nContexto:\n\n{context}"
-
-            prompt = transcription_text
-            summary = get_response_from_openai(system_prompt=system_prompt, prompt=prompt)
-
-            with open(summary_path, 'w', encoding='utf-8') as f:
-                f.write(summary)
+            md_file.write(f"# Tutoria: {file_name}\n\n")
+            md_file.write(resposta)
+        return markdown_file_name
             
-            self.register_summary(summary_path)
-            print(f"Resumen guardado en: {summary_path}")
-            return summary
 
-        except Exception as e:
-            print(f"Error al generar el resumen: {e}")
-            return None
-        
-    def generate_response_path(self, format="txt"):
+    def apunts(self,materia,idioma="Catalán",context=""):
+        print("muntant tutoria")
+        system_prompt="""
+            Eres un analista de transcripciones y a partir de ellas 
+            debes generar lo que se te pida a través de la trascipción
+            y la petición de prompt que te hagan.
         """
-        Genera el nombre del archivo de respuesta en el mismo directorio que el archivo MP3.
-        Si el formato es Markdown, utiliza la extensión .md.
+        with open(self.transcription_path, 'r', encoding='utf-8') as file:
+            # Lee el contenido del archivo y lo asigna a una variable
+            transcription_content = file.read()
+
+        prompt=f"""
+            A partir de la transcipció de una de mis classes de la materia de {materia}
+            Quiero que hagas unos apuntes que consistan en 
+            -Introducción
+            -Puntos clave tratados en la clase
+            -Desarrollo de los puntos con ejemplos y comandos
+            -Conclusión y recomendaciones de estudio
+            TRANSCIPCION DE LA clase: 
+            {transcription_content}
+
         """
-        base_name = os.path.splitext(os.path.basename(self.path_mp3))[0]
-        extension = "md" if format.lower() == "markdown" else "txt"
-        response_file = f"respuesta_email_{base_name}.{extension}"
-        return os.path.join(os.path.dirname(self.path_mp3), response_file)
-    
-    def check_if_mail_generated(self):
-        """
-        Verifica si la respuesta de correo ya ha sido generada consultando el registro.
-        """
-        registry = self.load_registry()
-        entry = registry.get(self.audio_id)
-        
-        if isinstance(entry, dict) and "mail_response" in entry:
-            return entry["mail_response"]
-        return None
-    
-    def register_mail_response(self, response_path):
-        """
-        Registra la respuesta del correo en el archivo de registro.
-        """
-        registry = self.load_registry()
-        if not isinstance(registry.get(self.audio_id), dict):
-            registry[self.audio_id] = {}
-        
-        registry[self.audio_id]["mail_response"] = response_path
-        self.save_registry(registry)
-    
+        if context!="":
+            prompt += f"\n\nCONTEXTO: {context}"
 
-    def get_mail(self, idioma="Castellano", format="Markdown", context=None):
-        """
-        Genera una respuesta de correo electrónico a partir de la transcripción y la guarda en un archivo.
-        """
-        response_path = self.generate_response_path(format)
+        resposta = get_response_from_openai(system_prompt,prompt,format="Markdown",idioma=idioma)
+        print("--------------------------------")
+        print(resposta)
+        print("--------------------------------")
+        file_name = os.path.splitext(os.path.basename(self.transcription_path))[0]
+        markdown_file_name = f"tutoria_{file_name}.md"
+        print(markdown_file_name)
 
-        if self.check_if_mail_generated():
-            print(f"Respuesta ya existente. Leyendo desde: {response_path}")
-            with open(response_path, 'r', encoding='utf-8') as f:
-                return f.read()
+        with open(markdown_file_name, 'w', encoding='utf-8') as md_file:
+            print("--------------------------------")
+            print("escribiendo fichero")
+            print("--------------------------------")
 
-        transcription_text = ""
-        try:
-            with open(self.transcription_path, 'r', encoding='utf-8') as f:
-                transcription_text = f.read()
+            md_file.write(f"# Tutoria: {file_name}\n\n")
+            md_file.write(resposta)
+        return markdown_file_name
 
-            system_prompt = f"""
-                Eres un experto en análisis de contenido. A partir de la transcripción proporcionada de una conversación,
-                debes generar un documento que explique en detalle lo que se dice, analizando el contenido y proporcionando
-                una descripción clara y organizada. 
-                
-                **Instrucciones detalladas:**
-                - Explica con todo detalle los temas principales de la conversación.
-                - Explica detalladamente, no resumas lo que se dice en cada parte de la conversación.
-                - Usa subtítulos H2 para separar las diferentes secciones temáticas de la conversación.
-                - Asegúrate de que el análisis sea claro y exhaustivo.
-                - En ningún caso hagas referencia a la transcripción ni a la conversación
-                - Utiliza el mimo tiempo verbal
-                {context}
-                
-                El resultado debe estar en formato {format} y en el idioma {idioma}.
-                """
-            if context:
-                system_prompt += f"\n\nContexto adicional:\n\n{context}"
 
-            prompt = transcription_text
-            mail_response = get_response_from_openai(system_prompt=system_prompt, prompt=prompt)
 
-            with open(response_path, 'w', encoding='utf-8') as f:
-                f.write(mail_response)
-            
-            self.register_mail_response(response_path)
-            print(f"Respuesta de correo guardada en: {response_path}")
-            return mail_response
 
-        except Exception as e:
-            print(f"Error al generar la respuesta de correo: {e}")
-            return None
-        
-    def get_enunciado(self, idioma="Castellano", format="Markdown", context=None):
-        """
-        Genera una enunciado de una practia
-        """
-        response_path = self.generate_response_path(format)
 
-        if self.check_if_mail_generated():
-            print(f"Respuesta ya existente. Leyendo desde: {response_path}")
-            with open(response_path, 'r', encoding='utf-8') as f:
-                return f.read()
-
-        transcription_text = ""
-        try:
-            with open(self.transcription_path, 'r', encoding='utf-8') as f:
-                transcription_text = f.read()
-
-            system_prompt = f"""
-                Eres un experto en análisis de contenido. A partir de la transcripción proporcionada de una conversación,
-                debes generar un enunciado para un tarea de classroom 
-                
-                **Instrucciones detalladas:**
-                - Haz una introducción de los contenidos de la tarea
-                - Explica detalladamente, los pasos que deben realizar los alumnos
-                - Usa subtítulos H2 para separar las diferentes secciones temáticas de la tarea.
-                - Asegúrate de que el análisis sea claro y exhaustivo.
-                - En ningún caso hagas referencia a la transcripción ni a la conversación
-
-                
-                {context}
-                
-                El resultado debe estar en formato {format} y en el idioma {idioma}.
-                """
-            if context:
-                system_prompt += f"\n\nContexto adicional:\n\n{context}"
-
-            prompt = transcription_text
-            mail_response = get_response_from_openai(system_prompt=system_prompt, prompt=prompt)
-
-            with open(response_path, 'w', encoding='utf-8') as f:
-                f.write(mail_response)
-            
-            self.register_mail_response(response_path)
-            print(f"Respuesta de correo guardada en: {response_path}")
-            return mail_response
-
-        except Exception as e:
-            print(f"Error al generar la respuesta de correo: {e}")
-            return None

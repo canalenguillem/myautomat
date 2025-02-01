@@ -518,15 +518,18 @@ class YouTube:
 
         # Sistema de prompt para generar la descripción con el título y emojis
         system_prompt = f"""
-            Generate a SEO-optimized title and description for a YouTube video in the specified language `{idioma}`.
-            - The title should be concise, engaging, and include relevant emojis to catch attention.
-            - The description should provide a clear summary, mention key points of the video, and also include emojis for emphasis.
-            - Write both in Markdown format.
-            
-            Format output as:
-            
-            # Title
-            Description text here.
+            Genera un título y una descripción optimizados para SEO de un video de YouTube en el idioma especificado `{idioma}`.  
+            - El título debe ser conciso, atractivo e incluir emojis relevantes para captar la atención.  
+            - La descripción debe ofrecer un resumen claro, mencionar los puntos clave del video e incluir emojis para destacar ideas importantes.  
+            - Las ideas de la descripción deben ir en párrafos diferentes.
+            - Escribe ambos en formato Markdown.  
+
+            Formato de salida:  
+
+            ```markdown
+            # Título  
+            Texto de la descripción aquí.
+            ```
         """
 
         # Genera la respuesta con el modelo GPT

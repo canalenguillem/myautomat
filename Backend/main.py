@@ -23,19 +23,27 @@ def main():
     elif args.audio:
         # Si se proporciona el archivo MP3, transcribirlo usando la clase Audio
         audio = Audio(path_mp3=args.audio)
-        transcripcion = audio.transcribe()
+        transcripcion = audio.transcribe_long_audio()
         # print(f"Transcripción:\n{transcripcion}")
+        # audio.tutoria("OBRADOR MUÑOZ, ALEJANDRO",asistentes="Mare: MUÑOZ SERRA, ISABEL tutor:Guillem Mateu, alejandro s'incorpora després",context="La que té problemes per entrar al GESTIB és la mare, no ha pogut veure el butlletí ni les faltes")
+        #audio.tutoria("MARIO ARRANZ",asistentes="Cora izquierdo, educadora den Mario, Ruben Moreno orientador del centre, Guillem Mateu tutor den Mario, més tard s'incorpora en Mario")
+        # audio.apunts(materia="Serveis en Xarxa")
+        # audio.tutoria("ANTONIO RIGO",asistentes="Toni rigo alumne major d'edat, Guillem Mateu tutor del centre",context="En toni ha faltat molt i fem una tutoria par parlar dels motius de les absències i el tema dels percentatges i possible baixa d'ofici")
+        # audio.apunts(materia="Serveis en Xarxa classe resum apache")
+        audio.tutoria("Miquel Rodríguez Macias",asistentes="Mare: MACIAS GONZALEZ, MARIA DEL ROCIO, tutor del centre: Guillem Mateu",context="En miquel ha falata molt i la motivació de convocar la tutoria var ser arrel d'una conversa que vaig tenir amb ell ja que fa faltar a una presentació i a un examen, és un alumnes que podria fer molt més del que fa")
+
+
 
         # Generar resumen de la transcripción
         # resumen = audio.get_summary(idioma="Catala")
         # print(f"Resumen:\n{resumen}")
-        context="""
-        Aquesta transcripció és l'enunciat d'una practica, per tan has de escriure un enunciat
-        on s'indiquin les passes que s'han de fer i les instructions de lliurament
+        # context="""
+        # Aquesta transcripció és l'enunciat d'una practica, per tan has de escriure un enunciat
+        # on s'indiquin les passes que s'han de fer i les instructions de lliurament
         
-        """
+        # """
 
-        enunciado=audio.get_enunciado(idioma="Catala",context=context)
+        # enunciado=audio.get_enunciado(idioma="Catala",context=context)
                                       
         # correo = audio.get_mail(idioma="Catala",context=context)
         # print(f"Correo electrónico:\n{correo}")

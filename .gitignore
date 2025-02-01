@@ -40,6 +40,7 @@ temp/
 *.jpeg
 *.png
 *.gif
+*.md
 
 # Archivos de salida generados
 output/
